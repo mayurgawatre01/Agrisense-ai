@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Upload Data{% endblock %}
+{% block page_title %}Upload Crop Data{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>📂 Upload Crop Data</h1>
+        <p>Upload a CSV or Excel file with your crop production data.</p>
+    </div>
+</div>
+
+<div style="max-width:640px;">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-file-upload card-title-icon"></i> Select File</div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">☁️</div>
+                <div class="upload-title">Click or drag & drop to upload</div>
+                <div class="upload-sub">Supports .csv and .xlsx files — max 16 MB</div>
+                <input type="file" id="fileInput" name="file" accept=".csv,.xlsx" style="display:none" onchange="onFileSelect(this)">
+            </div>
+
+            <div id="fileInfo" style="display:none; margin:1rem 0; padding:10px 14px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px; display:none; align-items:center; gap:10px;">
+                <i class="ti ti-file-text" style="color:var(--green-primary); font-size:1.2rem;"></i>
+                <div>
+                    <div id="fileName" style="font-size:0.85rem; font-weight:600; color:var(--text-primary);"></div>
+                    <div id="fileSize" style="font-size:0.75rem; color:var(--text-muted);"></div>
+                </div>
+                <button type="button" onclick="clearFile()" style="margin-left:auto; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+
+            <!-- Progress bar (shown after submit) -->
+            <div id="progressWrap" style="display:none; margin:0.75rem 0;">
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:4px;">Processing...</div>
+                <div style="height:4px; background:var(--bg-secondary); border-radius:2px; overflow:hidden;">
+                    <div id="progressBar" style="height:100%; width:0%; background:var(--green-primary); border-radius:2px; transition:width 0.3s;"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem; width:100%; justify-content:center;" id="submitBtn">
+                <i class="ti ti-upload"></i> Upload & Process
+            </button>
+        </form>
+    </div>
+
+    <!-- Format info -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-table card-title-icon"></i> Expected CSV Format</div>
+        </div>
+        <div class="table-container" style="margin:0;">
+            <table>
+                <thead>
+                    <tr><th>State_Name</th><th>District_Name</th><th>Crop_Year</th><th>Season</th><th>Crop</th><th>Area</th><th>Production</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Maharashtra</td><td>Pune</td><td>2022</td><td>Kharif</td><td>Rice</td><td>1500</td><td>3200</td></tr>
+                    <tr><td>Punjab</td><td>Amritsar</td><td>2022</td><td>Rabi</td><td>Wheat</td><td>2000</td><td>6100</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="alert alert-info" style="margin-top:1rem;">
+            <i class="ti ti-info-circle"></i>
+            <span>Tip: Download the Kaggle "Indian Crop Production Statistics" dataset — it's already in this format!</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+
+// Drag & drop
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('dragover'); }));
+dropZone.addEventListener('drop', ev => {
+    const f = ev.dataTransfer.files[0];
+    if (f) { document.getElementById('fileInput').files = ev.dataTransfer.files; onFileSelect({ files: [f] }); }
+});
+
+function onFileSelect(input) {
+    const f = input.files[0];
+    if (!f) return;
+    const info = document.getElementById('fileInfo');
+    document.getElementById('fileName').textContent = f.name;
+    document.getElementById('fileSize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+    info.style.display = 'flex';
+}
+function clearFile() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+}
+
+// Show progress on submit
+document.getElementById('uploadForm').addEventListener('submit', () => {
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<i class="ti ti-loader ti-spin"></i> Uploading...';
+    let w = 0;
+    const bar = document.getElementById('progressBar');
+    const iv = setInterval(() => { w = Math.min(w + 8, 85); bar.style.width = w + '%'; }, 200);
+});
+</script>
+{% endblock %}

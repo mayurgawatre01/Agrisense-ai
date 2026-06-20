@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+flask-bcrypt
+pandas
+numpy
+openpyxl
+scikit-learn
+joblib
+matplotlib
+seaborn
+fpdf2
+python-dotenv

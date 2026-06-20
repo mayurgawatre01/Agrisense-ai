@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block title %}Mandi Price Tracker{% endblock %}
+{% block page_title %}Mandi Price Tracker{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>📊 Mandi Price Tracker — "Kab Bechun?"</h1>
+        <p>Aaj ka mandi rate dekho, apni fasal sahi time par sahi price mein bechein</p>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Input Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-map-pin card-title-icon"></i> State aur Crop Chuniye</div>
+        </div>
+        <form method="POST" style="padding: 0 4px 8px;">
+            <div class="form-group">
+                <label>Apna State</label>
+                <select name="state" id="stateSelect" class="form-control" required onchange="onStateChange()">
+                    {% for s in states %}
+                    <option value="{{ s }}" {% if s == selected_state %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>District / Taluka Area <span style="color:var(--text-muted); font-weight:400;">(optional — compare mandiyon ke beech)</span></label>
+                <select name="district" id="districtSelect" class="form-control">
+                    <option value="">— Poore State ka Average —</option>
+                    {% for d in districts %}
+                    <option value="{{ d }}" {% if d == selected_district %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Fasal (Crop)</label>
+                <select name="commodity" class="form-control" required>
+                    {% for c in crops %}
+                    <option value="{{ c }}" {% if c == selected_crop %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">
+                <i class="ti ti-search"></i> Rate Dekho
+            </button>
+        </form>
+    </div>
+
+    <!-- Result Summary -->
+    {% if result and result.success %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-coin card-title-icon"></i> {{ selected_crop }} — {% if selected_district %}{{ selected_district }}, {% endif %}{{ selected_state }}</div>
+            {% if result.source == 'live' %}
+                <span class="badge badge-green"><i class="ti ti-broadcast"></i> Live Data</span>
+            {% else %}
+                <span class="badge badge-yellow"><i class="ti ti-wifi-off"></i> Offline Estimate</span>
+            {% endif %}
+        </div>
+        <div style="padding:0 4px;">
+            {% set top = result.records[0] %}
+            <div class="result-card" style="padding:1.25rem;">
+                <div class="result-yield-big" style="font-size:2.4rem;">₹{{ top.modal }}</div>
+                <div class="result-unit">
+                    {% if selected_district and result.records|length > 1 %}
+                        Best Mandi: {{ top.market }} ({{ result.records|length }} mandiyon mein se)
+                    {% else %}
+                        Modal Price per Quintal (100 kg)
+                    {% endif %}
+                </div>
+                <div class="result-meta-grid">
+                    <div class="result-meta-item">
+                        <div class="result-meta-label">Min Price</div>
+                        <div class="result-meta-value" style="color:#f87171;">₹{{ top.min }}</div>
+                    </div>
+                    <div class="result-meta-item">
+                        <div class="result-meta-label">Max Price</div>
+                        <div class="result-meta-value">₹{{ top.max }}</div>
+                    </div>
+                </div>
+            </div>
+            <p style="color:var(--text-muted); font-size:0.78rem; margin-top:12px; line-height:1.6;">
+                <i class="ti ti-info-circle"></i> {{ result.message }}
+            </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>State aur fasal chunkar "Rate Dekho" dabayein — aapko turant mandi price mil jaayega. District chunoge to us district ki saari mandiyon ka rate compare kar paoge.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Detailed Market Table -->
+{% if result and result.success and result.records|length > 0 %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="ti ti-table card-title-icon"></i>
+            {% if selected_district and result.records|length > 1 %}
+                {{ selected_district }} ki Mandiyon ka Comparison ({{ result.records|length }} mandi)
+            {% else %}
+                Mandi-wise Details
+            {% endif %}
+        </div>
+        {% if selected_district and result.records|length > 1 %}
+        <span class="badge badge-green"><i class="ti ti-sort-descending"></i> Best Price Upar</span>
+        {% endif %}
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mandi / Market</th>
+                    <th>District</th>
+                    <th>Variety</th>
+                    <th>Min (₹/Qtl)</th>
+                    <th>Max (₹/Qtl)</th>
+                    <th>Modal (₹/Qtl)</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in result.records %}
+            <tr {% if loop.first and selected_district and result.records|length > 1 %}style="background:rgba(34,197,94,0.06);"{% endif %}>
+                <td>
+                    <strong>{{ r.market }}</strong>
+                    {% if loop.first and selected_district and result.records|length > 1 %}
+                    <span class="badge badge-green" style="margin-left:6px; font-size:0.65rem;">Best</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.district }}</td>
+                <td>{{ r.variety }}</td>
+                <td style="color:#f87171;">₹{{ r.min }}</td>
+                <td>₹{{ r.max }}</td>
+                <td><strong style="color:var(--green-primary);">₹{{ r.modal }}</strong></td>
+                <td style="color:var(--text-muted); font-size:0.8rem;">{{ r.date }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- 🥇 Kab Bechun? — Seasonal Trend & Verdict -->
+{% if seasonal %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><i class="ti ti-calendar-stats card-title-icon"></i> Kab Bechun? — {{ seasonal.crop }} ka Seasonal Pattern</div>
+    </div>
+    <div class="grid-form" style="align-items:stretch;">
+        <div class="verdict-card verdict-{{ seasonal.verdict_class }}">
+            <div class="verdict-icon">
+                {% if seasonal.verdict_class == 'good' %}✅{% elif seasonal.verdict_class == 'wait' %}⏳{% else %}➖{% endif %}
+            </div>
+            <div class="verdict-title">{{ seasonal.verdict }}</div>
+            <p class="verdict-reason">{{ seasonal.reason }}</p>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;">
+                <span class="badge badge-green"><i class="ti ti-trending-up"></i> Best: {{ seasonal.best_month }}</span>
+                <span class="badge badge-red"><i class="ti ti-trending-down"></i> Avoid: {{ seasonal.worst_month }}</span>
+            </div>
+        </div>
+        <div>
+            <canvas id="seasonalChart" height="180"></canvas>
+        </div>
+    </div>
+    <p style="color:var(--text-muted); font-size:0.75rem; padding: 1rem 4px 0; line-height:1.6;">
+        📈 Yeh chart {{ seasonal.crop }} ke typical historical monthly price pattern par based hai (100 = saalana average).
+        Asli price har saal weather, export policy, aur demand ke hisaab se alag ho sakta hai — yeh general seasonal
+        guidance hai, guarantee nahi.
+    </p>
+</div>
+{% endif %}
+
+<!-- Tips -->
+<div class="card" style="border-left: 3px solid var(--green-primary);">
+    <div class="card-header">
+        <div class="card-title">💡 Bechne Se Pehle Yeh Tips Yaad Rakhein</div>
+    </div>
+    <ul style="color:var(--text-secondary); padding: 0 1.2rem 0.5rem 1.4rem; line-height:1.9; font-size:0.88rem;">
+        <li>Ek hi din mein 2-3 nazdeeki mandiyon ka rate compare karein.</li>
+        <li>Fasal ki quality (moisture, grading) jitni achi hogi, price utna behtar milega.</li>
+        <li><strong>e-NAM</strong> portal par bhi apni fasal list karke dekhein — kabhi-kabhi behtar price milta hai.</li>
+        <li>Bumper harvest season mein price girta hai — agar storage available hai to thoda wait karna fayda de sakta hai.</li>
+        <li>District chunkar us district ki saari mandiyon (talukas) ka aaj ka rate ek saath compare kar sakte ho — best price wali mandi sabse upar dikhegi.</li>
+    </ul>
+    <p style="color:var(--text-muted); font-size:0.72rem; padding: 0.5rem 1.2rem 0.5rem;">
+        📖 Source: AGMARKNET (Govt of India, data.gov.in). Live data na milne par offline estimated average dikhaya jaata hai —
+        final decision lene se pehle apni nazdeeki mandi mein confirm karein.
+    </p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Repopulate District dropdown when State changes (client-side, no reload needed)
+const DISTRICTS_BY_STATE = {{ districts_by_state | tojson }};
+
+function onStateChange() {
+    const stateSelect = document.getElementById('stateSelect');
+    const districtSelect = document.getElementById('districtSelect');
+    const newDistricts = DISTRICTS_BY_STATE[stateSelect.value] || [];
+
+    districtSelect.innerHTML = '<option value="">— Poore State ka Average —</option>';
+    newDistricts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        districtSelect.appendChild(opt);
+    });
+}
+</script>
+{% if seasonal %}
+<script>
+(function(){
+    const labels = {{ seasonal.month_names | tojson }};
+    const data   = {{ seasonal.index | tojson }};
+    const curIdx = {{ seasonal.current_month_idx }};
+
+    const pointColors = data.map((v, i) => i === curIdx ? '#fbbf24' : '#22c55e');
+    const pointRadii  = data.map((v, i) => i === curIdx ? 6 : 3);
+
+    new Chart(document.getElementById('seasonalChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Seasonal Price Index',
+                data,
+                fill: true,
+                backgroundColor: 'rgba(34,197,94,0.08)',
+                borderColor: '#22c55e',
+                borderWidth: 2,
+                tension: 0.35,
+                pointBackgroundColor: pointColors,
+                pointBorderColor: pointColors,
+                pointRadius: pointRadii,
+                pointHoverRadius: 7,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: c => `Index: ${c.parsed.y}` + (c.dataIndex === curIdx ? '  (Is mahine)' : '')
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+                y: { grid: { color: 'rgba(34,197,94,0.06)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+            }
+        }
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}My History{% endblock %}
+{% block page_title %}Crop History{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>📜 Crop History</h1>
+        <p>{{ records|length }} record(s) found</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('farmer.export_csv') }}" class="btn btn-outline btn-sm">
+            <i class="ti ti-table-export"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card" style="margin-bottom:16px;">
+    <form method="GET" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding: 4px;">
+        <div class="form-group" style="flex:1; min-width:180px; margin-bottom:0;">
+            <label class="form-label">Search Crop</label>
+            <input type="text" name="q" class="form-control" placeholder="e.g. Rice, Wheat..." value="{{ q }}">
+        </div>
+        <div class="form-group" style="min-width:140px; margin-bottom:0;">
+            <label class="form-label">Season</label>
+            <select name="season" class="form-control">
+                <option value="">All Seasons</option>
+                {% for s in seasons %}
+                <option value="{{ s }}" {% if s == active_season %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="ti ti-search"></i> Filter
+        </button>
+        {% if q or active_season %}
+        <a href="{{ url_for('farmer.history') }}" class="btn btn-ghost btn-sm">
+            <i class="ti ti-x"></i> Clear
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Bulk Delete Form -->
+<form id="bulk-form" method="POST" action="{{ url_for('farmer.delete_history') }}">
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><span class="card-title-icon">📊</span> Records</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <span id="selected-count" style="font-size:0.8rem; color:var(--text-muted); display:none;">0 selected</span>
+            <button type="submit" class="btn btn-ghost btn-sm" id="delete-btn" style="color:#f87171; display:none;"
+                    onclick="return confirm('Delete selected records?')">
+                <i class="ti ti-trash"></i> Delete Selected
+            </button>
+        </div>
+    </div>
+
+    {% if records %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:36px;"><input type="checkbox" id="select-all" onchange="toggleAll(this)"></th>
+                    <th>Crop</th><th>Season</th><th>Year</th><th>State</th><th>Area (ha)</th><th>Yield (t/ha)</th><th>Uploaded</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in records %}
+            <tr>
+                <td><input type="checkbox" name="ids" value="{{ row.id }}" class="row-check" onchange="updateSelected()"></td>
+                <td><strong>{{ row.crop }}</strong></td>
+                <td><span class="badge badge-green">{{ row.season }}</span></td>
+                <td style="color:var(--text-muted);">{{ row.crop_year }}</td>
+                <td>{{ row.state }}</td>
+                <td>{{ "%.2f"|format(row.area or 0) }}</td>
+                <td style="color:var(--green-primary); font-weight:600;">{{ "%.2f"|format(row.yield_per_hectare or 0) }}</td>
+                <td style="color:var(--text-muted); font-size:0.78rem;">{{ row.uploaded_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <p>No records found{% if q %} for "{{ q }}"{% endif %}. <a href="{{ url_for('farmer.upload') }}">Upload data</a></p>
+    </div>
+    {% endif %}
+</div>
+</form>
+
+<script>
+function toggleAll(cb) {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+    updateSelected();
+}
+function updateSelected() {
+    const n = document.querySelectorAll('.row-check:checked').length;
+    document.getElementById('selected-count').textContent = n + ' selected';
+    document.getElementById('selected-count').style.display = n ? 'inline' : 'none';
+    document.getElementById('delete-btn').style.display = n ? 'inline-flex' : 'none';
+}
+</script>
+
+{% endblock %}

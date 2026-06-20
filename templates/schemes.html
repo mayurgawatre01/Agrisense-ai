@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Govt Scheme Finder{% endblock %}
+{% block page_title %}Govt Scheme Finder{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>🏛️ Govt Scheme Finder</h1>
+        <p>Apna state chuniye — sabhi relevant sarkari yojanayein ek jagah dekhiye</p>
+    </div>
+</div>
+
+<!-- State Selector -->
+<div class="card">
+    <form method="GET" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:0 4px;">
+        <div class="form-group" style="margin-bottom:0; flex:1; min-width:220px;">
+            <label>Apna State Chuniye</label>
+            <select name="state" class="form-control" onchange="this.form.submit()">
+                {% for s in states %}
+                <option value="{{ s }}" {% if s == selected_state %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="ti ti-filter"></i> Schemes Dikhao
+        </button>
+    </form>
+</div>
+
+<div class="alert alert-info">
+    <i class="ti ti-info-circle"></i>
+    <span><strong>{{ selected_state }}</strong> ke liye <strong>{{ schemes|length }}</strong> sarkari yojanayein mil rahi hain — Central Govt + State-specific dono.</span>
+</div>
+
+<!-- Scheme Cards -->
+<div class="grid-2">
+    {% for s in schemes %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <span style="font-size:1.3rem;">{{ s.icon }}</span> {{ s.name_hi }}
+            </div>
+            <span class="badge {% if 'State' in s.category %}badge-purple{% else %}badge-blue{% endif %}">{{ s.category }}</span>
+        </div>
+        <div style="padding:0 4px;">
+            <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.7; margin-bottom:14px;">
+                {{ s.summary_hi }}
+            </p>
+
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:6px;">✅ Eligibility</div>
+                <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.84rem; line-height:1.8;">
+                    {% for e in s.eligibility_hi %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if s.not_eligible_hi and s.not_eligible_hi != '—' %}
+            <div class="alert alert-warning" style="margin-bottom:12px; font-size:0.8rem;">
+                <i class="ti ti-alert-triangle"></i>
+                <span>{{ s.not_eligible_hi }}</span>
+            </div>
+            {% endif %}
+
+            <div style="background:var(--bg-tertiary); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:6px;">📄 Documents Chahiye</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                    {% for d in s.documents_hi %}
+                    <span class="badge badge-green" style="font-weight:500;">{{ d }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:6px;">📝 Apply Kaise Karein</div>
+                <p style="color:var(--text-secondary); font-size:0.84rem; line-height:1.7;">{{ s.how_to_apply_hi }}</p>
+            </div>
+
+            <a href="{{ s.official_link }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">
+                <i class="ti ti-external-link"></i> Official Website Par Jaayein
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card" style="border-left: 3px solid var(--green-primary);">
+    <div class="card-header">
+        <div class="card-title">⚠️ Zaroori Suchna</div>
+    </div>
+    <p style="color:var(--text-secondary); padding: 0 4px 8px; line-height:1.7; font-size:0.85rem;">
+        Sarkari yojanaon ke rules, eligibility, aur dates samay-samay par badalte rehte hain.
+        Final apply karne se pehle hamesha official website par latest details zaroor confirm karein,
+        ya apne nazdeeki Common Service Centre (CSC) / Krishi Vigyan Kendra (KVK) se sampark karein.
+    </p>
+</div>
+
+{% endblock %}

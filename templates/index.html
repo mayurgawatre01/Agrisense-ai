@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+{% block content_auth %}
+<div class="hero">
+    <div class="hero-badge">
+        <i class="ti ti-leaf" style="font-size:0.85rem;"></i>
+        Smart Agriculture Platform
+    </div>
+    <h1>
+        Grow Smarter with<br>
+        <span class="highlight">AI-Powered</span> Insights
+    </h1>
+    <p class="hero-sub">
+        Predict crop yields, analyze historical trends, and make data-driven farming decisions — all in one platform.
+    </p>
+    <div class="hero-buttons">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding:12px 32px; font-size:0.95rem;">
+            <i class="ti ti-login"></i> Login
+        </a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-outline" style="padding:12px 32px; font-size:0.95rem;">
+            <i class="ti ti-user-plus"></i> Register Free
+        </a>
+    </div>
+
+    <div class="hero-features">
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Mandi Price Tracker</div>
+            <div class="feature-desc">Aaj ka mandi rate dekho — sahi time par sahi price mein fasal bechein.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔬</div>
+            <div class="feature-title">Pest/Disease Identifier</div>
+            <div class="feature-desc">Photo upload karo, AI turant batayega kaunsi bimari hai aur ilaaj kya hai.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-title">Govt Scheme Finder</div>
+            <div class="feature-desc">State chuniye, sabhi sarkari yojanayein eligibility ke saath dekhiye.</div>
+        </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div style="display:flex; gap:2.5rem; margin-top:3rem; flex-wrap:wrap; justify-content:center;">
+        <div style="text-align:center;">
+            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">2.4L+</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Training Records</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">14</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Crop Types</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">15</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Indian States</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">~88%</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Model Accuracy</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

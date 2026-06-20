@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}Pest/Disease Identifier{% endblock %}
+{% block page_title %}Pest/Disease Identifier{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>🔬 Pest/Disease Identifier</h1>
+        <p>Apni fasal ki photo upload karo, AI batayega kaunsi bimari hai aur kya ilaaj karein</p>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Upload Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-camera card-title-icon"></i> Photo Upload Karein</div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="pestForm">
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('photoInput').click()">
+                {% if uploaded_image %}
+                    <img src="{{ uploaded_image }}" alt="Uploaded crop photo" style="max-width:100%; max-height:220px; border-radius:10px; margin-bottom:10px;">
+                    <div class="upload-sub">Photo badalne ke liye click karein</div>
+                {% else %}
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-title">Click ya drag & drop karein</div>
+                    <div class="upload-sub">Patti, tana ya fal ki clear photo — JPG, PNG, WEBP — max 16 MB</div>
+                {% endif %}
+                <input type="file" id="photoInput" name="photo" accept=".jpg,.jpeg,.png,.webp" style="display:none" onchange="onFileSelect(this)">
+            </div>
+
+            <div id="fileInfo" style="display:none; margin:1rem 0; padding:10px 14px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px; align-items:center; gap:10px;">
+                <i class="ti ti-file-text" style="color:var(--green-primary); font-size:1.2rem;"></i>
+                <div>
+                    <div id="fileName" style="font-size:0.85rem; font-weight:600; color:var(--text-primary);"></div>
+                    <div id="fileSize" style="font-size:0.75rem; color:var(--text-muted);"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:0.75rem; width:100%; justify-content:center;" id="submitBtn">
+                <i class="ti ti-scan"></i> Photo Analyze Karein
+            </button>
+        </form>
+
+        <div class="alert alert-info" style="margin-top:1rem;">
+            <i class="ti ti-bulb"></i>
+            <span>Acchi tasveer ke liye: din ki roshni mein, paas se, sirf affected patti/tane par focus karke photo lein.</span>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div>
+        {% if result %}
+            {% if result.is_plant == false %}
+            <div class="card">
+                <div class="alert alert-warning">
+                    <i class="ti ti-alert-triangle"></i>
+                    <span>{{ result.symptoms_hi }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="ti ti-stethoscope card-title-icon"></i> Diagnosis</div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        {% if result.provider %}
+                        <span class="badge badge-blue">{{ result.provider }}</span>
+                        {% endif %}
+                        <span class="badge {% if result.confidence == 'High' %}badge-green{% elif result.confidence == 'Medium' %}badge-yellow{% else %}badge-red{% endif %}">
+                            {{ result.confidence }} Confidence
+                        </span>
+                    </div>
+                </div>
+                <div style="padding:0 4px;">
+                    <div style="font-size:1.3rem; font-weight:700; color:var(--green-primary); margin-bottom:2px;">
+                        {{ result.problem_name_hi }}
+                    </div>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+                        {{ result.problem_name_en }}{% if result.crop_guess %} · {{ result.crop_guess }}{% endif %} · {{ result.cause }}
+                    </div>
+
+                    <div style="background:var(--bg-tertiary); border-radius:8px; padding:12px; margin-bottom:12px;">
+                        <div style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:6px;">Lakshan (Symptoms)</div>
+                        <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.7;">{{ result.symptoms_hi }}</p>
+                    </div>
+
+                    {% if result.organic_treatment_hi %}
+                    <div style="background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.2); border-radius:8px; padding:12px; margin-bottom:12px;">
+                        <div style="font-size:0.78rem; color:var(--green-primary); text-transform:uppercase; font-weight:600; margin-bottom:6px;">🌿 Organic Ilaaj</div>
+                        <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.7;">{{ result.organic_treatment_hi }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if result.chemical_treatment_hi %}
+                    <div style="background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:12px; margin-bottom:12px;">
+                        <div style="font-size:0.78rem; color:#60a5fa; text-transform:uppercase; font-weight:600; margin-bottom:6px;">🧪 Chemical Ilaaj</div>
+                        <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.7;">{{ result.chemical_treatment_hi }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if result.prevention_hi %}
+                    <div style="background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); border-radius:8px; padding:12px;">
+                        <div style="font-size:0.78rem; color:#fbbf24; text-transform:uppercase; font-weight:600; margin-bottom:6px;">🛡️ Bachav (Prevention)</div>
+                        <p style="color:var(--text-secondary); font-size:0.88rem; line-height:1.7;">{{ result.prevention_hi }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <p style="color:var(--text-muted); font-size:0.72rem; padding: 0 4px;">
+                ⚠️ Yeh AI suggestion hai, final confirmation ke liye apne local Krishi Vigyan Kendra (KVK) ya agri-expert se zaroor sampark karein.
+            </p>
+            {% endif %}
+        {% else %}
+        <div class="card">
+            <div class="empty-state">
+                <div class="empty-icon">🔬</div>
+                <p>Photo upload karo — AI turant batayega ki fasal mein kya problem hai aur kya ilaaj karna chahiye.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Common Problems Quick Reference -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><i class="ti ti-list-details card-title-icon"></i> Aam Samasyaayein — Quick Reference</div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Samasya</th>
+                    <th>Kis Fasal Mein</th>
+                    <th>Lakshan</th>
+                    <th>Ilaaj</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in common_problems %}
+            <tr>
+                <td><strong>{{ p.name_hi }}</strong></td>
+                <td style="color:var(--text-muted);">{{ p.crops }}</td>
+                <td style="font-size:0.82rem;">{{ p.symptoms }}</td>
+                <td style="font-size:0.82rem; color:var(--text-secondary);">{{ p.treatment }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('dragover'); }));
+dropZone.addEventListener('drop', ev => {
+    const f = ev.dataTransfer.files[0];
+    if (f) { document.getElementById('photoInput').files = ev.dataTransfer.files; onFileSelect({ files: [f] }); }
+});
+
+function onFileSelect(input) {
+    const f = input.files[0];
+    if (!f) return;
+    const info = document.getElementById('fileInfo');
+    document.getElementById('fileName').textContent = f.name;
+    document.getElementById('fileSize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+    info.style.display = 'flex';
+}
+
+document.getElementById('pestForm').addEventListener('submit', () => {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Analyze ho raha hai...';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CropSense{% endblock %} | Smart Agriculture Analytics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if not session.get('user_id') %}no-sidebar{% endif %}">
+
+{% if session.get('user_id') %}
+<div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+        <a href="{{ url_for('farmer.dashboard') }}" class="sidebar-brand">
+            <div class="brand-icon-wrap">🌾</div>
+            <div><div class="brand-name">CropSense</div></div>
+            <span class="brand-version">v3.1</span>
+        </a>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label" data-i18n="nav.farmer_tools">Farmer Tools</span>
+            <a href="{{ url_for('farmer.dashboard') }}" class="{% if request.endpoint == 'farmer.dashboard' %}active{% endif %}">
+                <i class="ti ti-layout-dashboard nav-icon"></i> <span data-i18n="nav.dashboard">Dashboard</span>
+            </a>
+            <a href="{{ url_for('farmer.upload') }}" class="{% if request.endpoint == 'farmer.upload' %}active{% endif %}">
+                <i class="ti ti-upload nav-icon"></i> <span data-i18n="nav.upload_data">Upload Data</span>
+            </a>
+            <a href="{{ url_for('farmer.predict') }}" class="{% if request.endpoint == 'farmer.predict' %}active{% endif %}">
+                <i class="ti ti-brain nav-icon"></i> <span data-i18n="nav.predict_yield">Predict Yield</span>
+                <span class="nav-badge">AI</span>
+            </a>
+            <a href="{{ url_for('farmer.recommend') }}" class="{% if request.endpoint == 'farmer.recommend' %}active{% endif %}">
+                <i class="ti ti-leaf nav-icon"></i> <span data-i18n="nav.crop_recommender">Crop Recommender</span>
+            </a>
+            <a href="{{ url_for('farmer.fertilizer') }}" class="{% if request.endpoint == 'farmer.fertilizer' %}active{% endif %}">
+                <i class="ti ti-flask nav-icon"></i> <span data-i18n="nav.fertilizer_calc">Fertilizer Calc</span>
+            </a>
+            <span class="nav-section-label" data-i18n="nav.kab_bechun">Kab Bechun? 🥇</span>
+            <a href="{{ url_for('tools.mandi_tracker') }}" class="{% if request.endpoint == 'tools.mandi_tracker' %}active{% endif %}">
+                <i class="ti ti-chart-line nav-icon"></i> <span data-i18n="nav.mandi_tracker">Mandi Price Tracker</span>
+            </a>
+            <a href="{{ url_for('tools.pest_identifier') }}" class="{% if request.endpoint == 'tools.pest_identifier' %}active{% endif %}">
+                <i class="ti ti-camera nav-icon"></i> <span data-i18n="nav.pest_identifier">Pest/Disease Identifier</span>
+                <span class="nav-badge">AI</span>
+            </a>
+            <a href="{{ url_for('tools.scheme_finder') }}" class="{% if request.endpoint == 'tools.scheme_finder' %}active{% endif %}">
+                <i class="ti ti-building-bank nav-icon"></i> <span data-i18n="nav.scheme_finder">Govt Scheme Finder</span>
+            </a>
+            <a href="{{ url_for('farmer.history') }}" class="{% if request.endpoint == 'farmer.history' %}active{% endif %}">
+                <i class="ti ti-clock-hour-4 nav-icon"></i> <span data-i18n="nav.history">History</span>
+            </a>
+            <span class="nav-section-label" data-i18n="nav.reports">Reports</span>
+            <a href="#" onclick="downloadPDFReport()">
+                <i class="ti ti-file-type-pdf nav-icon"></i> <span data-i18n="nav.pdf_report">PDF Report</span>
+            </a>
+            <a href="{{ url_for('farmer.export_csv') }}">
+                <i class="ti ti-table-export nav-icon"></i> <span data-i18n="nav.export_csv">Export CSV</span>
+            </a>
+            {% if session.get('role') == 'admin' %}
+            <span class="nav-section-label">Admin</span>
+            <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <i class="ti ti-shield nav-icon"></i> Admin Panel
+            </a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="user-avatar">{{ session.get('user_name','U')[0]|upper }}</div>
+                <div>
+                    <div class="user-name">{{ session.get('user_name','') }}</div>
+                    <div class="user-role">{% if session.get('role') == 'admin' %}🛡️ Admin{% else %}🌱 Farmer{% endif %}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn-logout-sidebar">
+                <i class="ti ti-logout"></i> <span data-i18n="nav.logout">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <div class="topbar">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+                <span class="topbar-title">{% block page_title %}{% endblock %}</span>
+            </div>
+            <div class="topbar-actions">
+                <div id="weather-widget" class="topbar-weather" title="Farm Weather">
+                    <i class="ti ti-cloud"></i> <span id="weather-temp">—°C</span>
+                </div>
+                <div class="topbar-btn" data-tip="Notifications">
+                    <i class="ti ti-bell"></i>
+                    <span class="notif-dot"></span>
+                </div>
+                <a href="{{ url_for('farmer.predict') }}" class="topbar-btn" data-tip="Quick Predict">
+                    <i class="ti ti-bolt"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="flash-container" id="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash flash-{{ cat }}">
+                        <i class="ti ti-{% if cat == 'success' %}check{% elif cat == 'danger' %}alert-circle{% elif cat == 'warning' %}alert-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        </div>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% else %}
+<div class="flash-container" id="flash-container">
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">
+                <i class="ti ti-{% if cat == 'success' %}check{% elif cat == 'danger' %}alert-circle{% else %}info-circle{% endif %}"></i>
+                {{ msg }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</div>
+{% block content_auth %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}Farmer Dashboard{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>👨‍🌾 My Farm Overview</h1>
+        <p>Welcome back, <strong style="color:var(--green-primary);">{{ session.get('user_name') }}</strong>! Here's what's happening on your farm.</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        {% if ml_status.trained %}
+        <form method="POST" action="{{ url_for('farmer.retrain') }}" style="display:inline;">
+            <button class="btn btn-ghost btn-sm" onclick="return confirm('Retrain ML model with your data?')">
+                <i class="ti ti-refresh"></i> Retrain Model
+            </button>
+        </form>
+        {% endif %}
+        <button onclick="downloadPDFReport()" class="btn btn-outline btn-sm">
+            <i class="ti ti-file-type-pdf"></i> Export PDF
+        </button>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-wrap">📋</div>
+            <span class="stat-trend">+{{ recent_crops|length if recent_crops else 0 }} new</span>
+        </div>
+        <div class="stat-value">{{ total_records }}</div>
+        <div class="stat-label">Total Records</div>
+        <div class="stat-sub">Uploaded crop entries</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-wrap">🤖</div>
+            <span class="stat-trend">AI</span>
+        </div>
+        <div class="stat-value">{{ total_predictions }}</div>
+        <div class="stat-label">Predictions Made</div>
+        <div class="stat-sub">ML model queries</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-wrap">🌾</div>
+        </div>
+        <div class="stat-value">{{ avg_yield }}</div>
+        <div class="stat-label">Avg Yield (t/ha)</div>
+        <div class="stat-sub">Across all crops</div>
+    </div>
+    <div class="stat-card" id="weather-card">
+        <div class="stat-card-header">
+            <div class="stat-icon-wrap" id="weather-icon-wrap">☁️</div>
+            <span class="stat-trend" id="weather-humidity-badge">—%</span>
+        </div>
+        <div class="stat-value" id="weather-temp-val" style="font-size:1.6rem;">—°C</div>
+        <div class="stat-label" id="weather-desc">Loading weather…</div>
+        <div class="stat-sub" id="weather-city">—</div>
+    </div>
+</div>
+
+<!-- Weather city picker -->
+<div id="weather-picker" style="margin-bottom:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <label style="color:var(--text-muted); font-size:0.85rem;"><i class="ti ti-map-pin"></i> City:</label>
+    <input id="weather-city-input" type="text" value="Pune"
+           class="form-control" style="max-width:180px; padding:6px 12px; font-size:0.85rem;">
+    <button onclick="loadWeather()" class="btn btn-ghost btn-sm"><i class="ti ti-refresh"></i> Update</button>
+    <span id="weather-mock-note" style="font-size:0.75rem; color:var(--text-muted); display:none;">
+        ℹ️ Demo data — <a href="#" style="color:var(--green-primary);">Add WEATHER_API_KEY</a> for live data
+    </span>
+</div>
+
+<!-- 🥇 Sabse Tagdi — Kab Bechun? Quick Access -->
+<div class="card" style="background:linear-gradient(135deg, rgba(34,197,94,0.06), rgba(22,163,74,0.02)); border-color:rgba(34,197,94,0.25);">
+    <div class="card-header">
+        <div class="card-title">🥇 Sabse Tagdi — "Kab Bechun?"</div>
+    </div>
+    <div class="grid-3">
+        <a href="{{ url_for('tools.mandi_tracker') }}" class="feature-card" style="text-decoration:none; display:block;">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Mandi Price Tracker</div>
+            <div class="feature-desc">Aaj ka rate kya chal raha hai apni fasal ka — turant dekho.</div>
+        </a>
+        <a href="{{ url_for('tools.pest_identifier') }}" class="feature-card" style="text-decoration:none; display:block;">
+            <div class="feature-icon">🔬</div>
+            <div class="feature-title">Pest/Disease Identifier <span class="badge badge-green" style="margin-left:4px;">AI</span></div>
+            <div class="feature-desc">Photo upload karo, AI batayega kya bimari hai aur ilaaj.</div>
+        </a>
+        <a href="{{ url_for('tools.scheme_finder') }}" class="feature-card" style="text-decoration:none; display:block;">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-title">Govt Scheme Finder</div>
+            <div class="feature-desc">State select karo, relevant sarkari yojanayein dekho.</div>
+        </a>
+    </div>
+</div>
+
+<!-- ML model status banner -->
+{% if not ml_status.trained %}
+<div class="flash flash-warning" style="margin-bottom:16px;">
+    <i class="ti ti-alert-triangle"></i>
+    ML model not trained yet — predictions use rule-based estimates.
+    <a href="{{ url_for('farmer.upload') }}" style="color:inherit; font-weight:600; text-decoration:underline;">Upload data</a>
+    then click Retrain Model above for higher accuracy.
+</div>
+{% else %}
+<div class="flash flash-success" style="margin-bottom:16px; opacity:0.85;">
+    <i class="ti ti-check"></i>
+    ML model active ({{ ml_status.size_kb }} KB) — predictions use Random Forest.
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><i class="ti ti-bolt card-title-icon"></i> Quick Actions</div>
+    </div>
+    <div class="quick-actions">
+        <a href="{{ url_for('farmer.upload') }}" class="btn btn-primary">
+            <i class="ti ti-upload"></i> Upload Crop Data
+        </a>
+        <a href="{{ url_for('farmer.predict') }}" class="btn btn-outline">
+            <i class="ti ti-brain"></i> Predict Yield
+        </a>
+        <a href="{{ url_for('farmer.recommend') }}" class="btn btn-outline">
+            <i class="ti ti-leaf"></i> Crop Recommender
+        </a>
+        <a href="{{ url_for('farmer.fertilizer') }}" class="btn btn-outline">
+            <i class="ti ti-flask"></i> Fertilizer Calc
+        </a>
+        <a href="{{ url_for('farmer.history') }}" class="btn btn-ghost">
+            <i class="ti ti-history"></i> View History
+        </a>
+        <a href="{{ url_for('farmer.export_csv') }}" class="btn btn-ghost">
+            <i class="ti ti-table-export"></i> Export CSV
+        </a>
+        <button onclick="downloadPDFReport()" class="btn btn-ghost">
+            <i class="ti ti-file-export"></i> PDF Report
+        </button>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Recent Crops -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📊</span> Recent Crop Data</div>
+            <a href="{{ url_for('farmer.history') }}" class="card-action">View all →</a>
+        </div>
+        {% if recent_crops %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Crop</th><th>Season</th><th>Year</th><th>Yield (t/ha)</th></tr>
+                </thead>
+                <tbody>
+                {% for row in recent_crops %}
+                <tr>
+                    <td><strong>{{ row.crop }}</strong></td>
+                    <td><span class="badge badge-green">{{ row.season }}</span></td>
+                    <td style="color:var(--text-muted);">{{ row.crop_year }}</td>
+                    <td style="color:var(--green-primary); font-weight:600;">{{ "%.2f"|format(row.yield_per_hectare or 0) }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <p>No data yet. <a href="{{ url_for('farmer.upload') }}">Upload your first CSV</a></p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Predictions -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🤖</span> Recent Predictions</div>
+            <a href="{{ url_for('farmer.predict') }}" class="card-action">Predict now →</a>
+        </div>
+        {% if recent_predictions %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Crop</th><th>Yield</th><th>Confidence</th></tr>
+                </thead>
+                <tbody>
+                {% for p in recent_predictions %}
+                <tr>
+                    <td><strong>{{ p.crop }}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">{{ p.season }}</span></td>
+                    <td><strong style="color:var(--green-primary);">{{ "%.2f"|format(p.predicted_yield or 0) }} t/ha</strong></td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="flex:1; background:var(--bg-tertiary); border-radius:10px; height:6px; min-width:50px;">
+                                <div style="width:{{ (p.confidence or 0)*100|round|int }}%; background:var(--green-primary); height:6px; border-radius:10px;"></div>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">{{ ((p.confidence or 0)*100)|round|int }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🤖</div>
+            <p>No predictions yet. <a href="{{ url_for('farmer.predict') }}">Try predicting yield</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Charts row -->
+{% if recent_crops or recent_predictions %}
+<div class="grid-2">
+    {% if recent_crops %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📈</span> Yield Trend</div>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Last {{ recent_crops|length }} records</span>
+        </div>
+        <canvas id="yieldChart" height="140"></canvas>
+    </div>
+    {% endif %}
+
+    {% if conf_values %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🎯</span> Prediction Confidence</div>
+        </div>
+        <canvas id="confChart" height="140"></canvas>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if top_crop_labels %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><span class="card-title-icon">🌿</span> Top Crops by Frequency</div>
+    </div>
+    <canvas id="topCropsChart" height="70"></canvas>
+</div>
+{% endif %}
+
+<script>
+// ── Yield Chart ──────────────────────────────────────────────────────────────
+{% if recent_crops %}
+(function(){
+    const labels = {{ recent_crops | map(attribute='crop') | list | tojson }};
+    const data   = {{ recent_crops | map(attribute='yield_per_hectare') | list | tojson }};
+    new Chart(document.getElementById('yieldChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Yield (t/ha)', data,
+            backgroundColor: 'rgba(34,197,94,0.25)', borderColor: '#22c55e',
+            borderWidth: 2, borderRadius: 6, borderSkipped: false }] },
+        options: { responsive: true,
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: c => `${c.parsed.y.toFixed(2)} t/ha` } } },
+            scales: {
+                x: { grid: { color: 'rgba(34,197,94,0.06)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                y: { grid: { color: 'rgba(34,197,94,0.06)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// ── Confidence Chart ─────────────────────────────────────────────────────────
+{% if conf_values %}
+(function(){
+    const labels = {{ conf_labels | tojson }};
+    const data   = {{ conf_values | tojson }};
+    new Chart(document.getElementById('confChart').getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Confidence (%)', data, fill: true,
+            backgroundColor: 'rgba(59,130,246,0.12)', borderColor: '#60a5fa',
+            pointBackgroundColor: '#60a5fa', tension: 0.4, borderWidth: 2 }] },
+        options: { responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 30 } },
+                y: { min: 50, max: 100, grid: { color: 'rgba(96,165,250,0.06)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + '%' } }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// ── Top Crops Chart ──────────────────────────────────────────────────────────
+{% if top_crop_labels %}
+(function(){
+    const labels = {{ top_crop_labels | tojson }};
+    const data   = {{ top_crop_counts | tojson }};
+    const colors = ['#22c55e','#4ade80','#86efac','#34d399','#6ee7b7','#a7f3d0'];
+    new Chart(document.getElementById('topCropsChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+        options: { responsive: true, cutout: '65%',
+            plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 12 } } }
+        }
+    });
+})();
+{% endif %}
+
+// ── Weather Widget ───────────────────────────────────────────────────────────
+function loadWeather() {
+    const city = document.getElementById('weather-city-input').value.trim() || 'Pune';
+    fetch(`/farmer/api/weather?city=${encodeURIComponent(city)}`)
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) return;
+            document.getElementById('weather-temp-val').textContent = d.temp + '°C';
+            document.getElementById('weather-desc').textContent     = d.description;
+            document.getElementById('weather-city').textContent     = d.city + ' | Wind: ' + d.wind_speed + ' km/h';
+            document.getElementById('weather-humidity-badge').textContent = d.humidity + '% RH';
+            document.getElementById('weather-temp').textContent    = d.temp + '°C';
+            const icons = { '01': '☀️', '02': '⛅', '03': '🌥️', '04': '☁️', '09': '🌧️', '10': '🌦️', '11': '⛈️', '13': '❄️', '50': '🌫️' };
+            const code  = d.icon ? d.icon.substring(0, 2) : '02';
+            document.getElementById('weather-icon-wrap').textContent = icons[code] || '🌡️';
+            if (d.mock) document.getElementById('weather-mock-note').style.display = 'inline';
+        });
+}
+loadWeather();
+</script>
+
+{% endblock %}

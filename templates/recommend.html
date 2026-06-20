@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Crop Recommender{% endblock %}
+{% block page_title %}Crop Recommender{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>🌱 <span data-i18n="rec.title">Crop Recommender</span></h1>
+        <p data-i18n="rec.subtitle">Enter your soil and climate data to get crop suggestions</p>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Input Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="ti ti-microscope card-title-icon"></i> <span data-i18n="rec.soil_inputs">Soil & Climate Inputs</span></div>
+        </div>
+        <form method="POST" style="padding: 0 4px;">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.nitrogen">Nitrogen (N) kg/ha</label>
+                    <input type="number" name="nitrogen" class="form-control" value="{{ request.form.get('nitrogen','80') }}" min="0" max="400" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.phosphorus">Phosphorus (P) kg/ha</label>
+                    <input type="number" name="phosphorus" class="form-control" value="{{ request.form.get('phosphorus','50') }}" min="0" max="300" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.potassium">Potassium (K) kg/ha</label>
+                    <input type="number" name="potassium" class="form-control" value="{{ request.form.get('potassium','50') }}" min="0" max="300" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.soil_ph">Soil pH</label>
+                    <input type="number" step="0.1" name="ph" class="form-control" value="{{ request.form.get('ph','6.5') }}" min="3" max="10" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.rainfall">Avg Rainfall (mm/month)</label>
+                    <input type="number" name="rainfall" class="form-control" value="{{ request.form.get('rainfall','100') }}" min="0" max="500" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="rec.temperature">Avg Temperature (°C)</label>
+                    <input type="number" step="0.1" name="temperature" class="form-control" value="{{ request.form.get('temperature','25') }}" min="0" max="50" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px; width:100%;">
+                <i class="ti ti-leaf"></i> <span data-i18n="rec.get_recs">Get Recommendations</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div>
+        {% if result %}
+
+        <!-- Suitability Score (Top crop) -->
+        <div class="card" style="margin-bottom:16px; text-align:center; padding: 20px 0;">
+            <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;" data-i18n="rec.score_label">Best Match Suitability Score</div>
+            <div style="font-size:4rem; font-weight:900; color:var(--green-primary); line-height:1;">{{ result[0].match }}</div>
+            <div style="font-size:1rem; color:var(--text-muted); margin-bottom:4px;">/ 100</div>
+            <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">{{ result[0].crop }}</div>
+        </div>
+
+        <!-- Top 3 Crop Cards -->
+        {% for r in result %}
+        <div class="card" style="margin-bottom:14px;">
+            <div style="display:flex; align-items:flex-start; gap:14px; padding: 4px 4px 0;">
+                <div style="font-size:2.2rem; min-width:44px; text-align:center; padding-top:2px;">
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else %}🥉{% endif %}
+                </div>
+                <div style="flex:1;">
+                    <!-- Crop name + match bar -->
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; font-size:1.1rem; color:var(--text-primary);">{{ r.crop }}</div>
+                        <div style="font-weight:800; font-size:1rem; color:var(--green-primary);">{{ r.match }}%</div>
+                    </div>
+                    <div style="margin:6px 0 10px; background:var(--bg-tertiary); border-radius:20px; height:7px; overflow:hidden;">
+                        <div style="width:{{ r.match }}%; background:var(--green-primary); height:100%; border-radius:20px; transition:width 0.6s;"></div>
+                    </div>
+
+                    <!-- Profit / Water / Risk / Duration row -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                        <div style="background:var(--bg-tertiary); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:0.7rem; color:var(--text-muted);" data-i18n="rec.profit">Est. Profit/Acre</div>
+                            <div style="font-weight:700; color:#4ade80; font-size:0.95rem;">₹{{ "{:,}".format(r.profit) }}</div>
+                        </div>
+                        <div style="background:var(--bg-tertiary); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:0.7rem; color:var(--text-muted);" data-i18n="rec.water">Water Need</div>
+                            <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem;">{{ r.water_icon }} {{ r.water }}</div>
+                        </div>
+                        <div style="background:var(--bg-tertiary); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:0.7rem; color:var(--text-muted);" data-i18n="rec.risk">Risk Level</div>
+                            <div style="font-weight:700; font-size:0.9rem;" style="color:{{ r.risk_color }};">
+                                <span style="color:{{ r.risk_color }};">{{ r.risk }}</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--bg-tertiary); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:0.7rem; color:var(--text-muted);" data-i18n="rec.duration">Duration</div>
+                            <div style="font-weight:600; color:var(--text-primary); font-size:0.85rem;">{{ r.duration }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Why this crop? -->
+                    <div style="margin-bottom:10px;">
+                        {% if r.good %}
+                        <div style="margin-bottom:4px;">
+                            {% for g in r.good %}
+                            <span style="display:inline-block; background:rgba(74,222,128,0.12); color:#4ade80; border-radius:20px; padding:2px 8px; font-size:0.72rem; margin:2px 2px 2px 0;">✔ {{ g }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if r.warn %}
+                        <div>
+                            {% for w in r.warn %}
+                            <span style="display:inline-block; background:rgba(251,191,36,0.12); color:#fbbf24; border-radius:20px; padding:2px 8px; font-size:0.72rem; margin:2px 2px 2px 0;">⚠ {{ w }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Fertilizer Plan CTA -->
+                    <a href="{{ url_for('farmer.fertilizer') }}?crop={{ r.crop }}"
+                       class="btn btn-ghost btn-sm" style="width:100%; text-align:center;">
+                        <i class="ti ti-flask"></i> <span data-i18n="rec.fertilizer_cta">Generate Fertilizer Plan →</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Comparison Table -->
+        <div class="card" style="margin-top:4px;">
+            <div class="card-header"><div class="card-title">📊 <span data-i18n="rec.comparison">Side-by-Side Comparison</span></div></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="dash.crop">Crop</th>
+                            <th data-i18n="rec.match_col">Match</th>
+                            <th data-i18n="rec.profit_col">Profit/Acre</th>
+                            <th data-i18n="rec.water_col">Water</th>
+                            <th data-i18n="rec.risk_col">Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in result %}
+                        <tr>
+                            <td><strong>{% if loop.index==1%}🥇{% elif loop.index==2%}🥈{% else %}🥉{% endif %} {{ r.crop }}</strong></td>
+                            <td><span class="badge badge-green">{{ r.match }}%</span></td>
+                            <td style="color:#4ade80; font-weight:700;">₹{{ "{:,}".format(r.profit) }}</td>
+                            <td>{{ r.water_icon }}</td>
+                            <td><span style="color:{{ r.risk_color }}; font-weight:600;">{{ r.risk }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div class="empty-state">
+                <div class="empty-icon">🌾</div>
+                <p>Fill in the form to get personalized crop recommendations based on your soil profile.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card" style="margin-top:16px;">
+            <div class="card-header"><div class="card-title">ℹ️ <span data-i18n="rec.how_it_works">How It Works</span></div></div>
+            <p style="color:var(--text-secondary); font-size:0.85rem; line-height:1.7; padding: 0 4px 8px;" data-i18n="rec.how_body">
+                The recommender compares your NPK values, soil pH, rainfall, and temperature
+                against optimal growing conditions for 12 common Indian crops. Match % shows
+                how well your conditions align with each crop's ideal range. Profit estimates
+                are approximate market averages per acre.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>🛡️ Admin Dashboard</h1>
+        <p>Platform overview and user management</p>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header"><div class="stat-icon-wrap">👥</div></div>
+        <div class="stat-value">{{ total_users }}</div>
+        <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><div class="stat-icon-wrap">📋</div></div>
+        <div class="stat-value">{{ total_crops }}</div>
+        <div class="stat-label">Total Crop Records</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header"><div class="stat-icon-wrap">🤖</div></div>
+        <div class="stat-value">{{ total_preds }}</div>
+        <div class="stat-label">Total Predictions</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><i class="ti ti-users card-title-icon"></i> Users</div>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>State</th><th>Records</th><th>Predictions</th><th>Joined</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+            {% for s in user_stats %}
+            <tr>
+                <td><strong>{{ s.user.name }}</strong></td>
+                <td style="color:var(--text-muted);">{{ s.user.email }}</td>
+                <td><span class="badge {% if s.user.role == 'admin' %}badge-blue{% else %}badge-green{% endif %}">{{ s.user.role }}</span></td>
+                <td>{{ s.user.state or '—' }}</td>
+                <td>{{ s.crops }}</td>
+                <td>{{ s.preds }}</td>
+                <td style="color:var(--text-muted); font-size:0.8rem;">{{ s.user.created_at.strftime('%d %b %Y') }}</td>
+                <td>
+                    {% if s.user.role != 'admin' %}
+                    <form method="POST" action="{{ url_for('admin.delete_user', uid=s.user.id) }}"
+                          onsubmit="return confirm('Delete user {{ s.user.name }}?')">
+                        <button type="submit" class="btn btn-ghost" style="color:#f87171; font-size:0.8rem; padding:4px 10px;">
+                            <i class="ti ti-trash"></i> Delete
+                        </button>
+                    </form>
+                    {% else %}
+                    <span style="color:var(--text-muted); font-size:0.8rem;">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
