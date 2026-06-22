@@ -338,7 +338,7 @@ def export_csv():
         io.BytesIO(output.getvalue().encode()),
         mimetype='text/csv',
         as_attachment=True,
-        download_name='cropsense_history.csv'
+        download_name='farmos_history.csv'
     )
 
 
@@ -391,7 +391,7 @@ def report_pdf():
         generate_farmer_report(uid, user.name, stats, crops, predictions, charts_dir)
         abs_path = os.path.abspath(os.path.join('static', 'charts', f'report_{uid}.pdf'))
         return send_file(abs_path, as_attachment=True,
-                         download_name=f"CropSense_Report_{user.name}.pdf",
+                         download_name=f"FarmOS_Report_{user.name}.pdf",
                          mimetype='application/pdf')
     except Exception as e:
         flash(f"PDF generation failed: {str(e)}", 'danger')
@@ -449,7 +449,7 @@ def fertilizer_pdf():
         path = generate_fertilizer_report(crop, plan)
         abs_path = os.path.abspath(path)
         return send_file(abs_path, as_attachment=True,
-                         download_name=f"CropSense_Fertilizer_{crop}.pdf",
+                         download_name=f"FarmOS_Fertilizer_{crop}.pdf",
                          mimetype='application/pdf')
     except Exception as e:
         flash(f"PDF generation failed: {str(e)}", 'danger')

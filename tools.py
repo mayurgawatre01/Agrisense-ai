@@ -124,3 +124,106 @@ def scheme_finder():
         selected_state=selected_state,
         schemes=schemes
     )
+
+
+# ─── 4. AI Chatbot Assistant ───────────────────────────────────────────────
+
+@tools.route('/chat', methods=['POST'])
+@login_required
+def chat_assistant():
+    import urllib.request, json as _json
+    
+    data = request.get_json() or {}
+    message = data.get('message', '').strip()
+    if not message:
+        return jsonify({'success': False, 'error': 'Empty message'})
+
+    gemini_key = current_app.config.get('GEMINI_API_KEY', '')
+    
+    if not gemini_key:
+        response_text = _offline_chatbot_response(message)
+        return jsonify({'success': True, 'response': response_text, 'offline': True})
+    
+    try:
+        system_prompt = (
+            "You are FarmOS AI, a premium agricultural advisor for Indian farmers. "
+            "Help them choose crops, advise on pest control, fertilizers, and smart watering. "
+            "Answer the query in a simple, practical, and highly encouraging manner. "
+            "Use Devanagari script for simple Hindi queries or Hinglish for casual conversational prompts. "
+            "Keep the response concise (2-4 sentences max)."
+        )
+        
+        payload = {
+            "contents": [{
+                "parts": [{"text": f"{system_prompt}\n\nFarmer Query: {message}"}]
+            }],
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 300
+            }
+        }
+        
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        req = urllib.request.Request(
+            url,
+            data=_json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "x-goog-api-key": gemini_key},
+            method="POST"
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            res_data = _json.loads(resp.read().decode("utf-8"))
+            
+        candidates = res_data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            response_text = "\n".join(p.get("text", "") for p in parts).strip()
+            return jsonify({'success': True, 'response': response_text, 'offline': False})
+        else:
+            raise ValueError("No output generated")
+            
+    except Exception as e:
+        response_text = _offline_chatbot_response(message)
+        return jsonify({'success': True, 'response': response_text, 'offline': True, 'error': str(e)})
+
+
+def _offline_chatbot_response(message: str) -> str:
+    msg = message.lower()
+    if "grow" in msg or "ugayein" in msg or "fasal" in msg or "what should i grow" in msg or "what to grow" in msg:
+        return (
+            "Farming choices depend on your climate and soil. "
+            "For high water availability, grow Rice or Sugarcane. "
+            "For medium water, grow Wheat or Maize. "
+            "For dry regions, grow Cotton, Groundnut or Pearl Millet (Bajra). "
+            "Check our Crop Recommender page in the sidebar for personalized calculations!"
+        )
+    elif "pest" in msg or "disease" in msg or "insect" in msg or "kida" in msg or "bimari" in msg:
+        return (
+            "Pest problems? Go to the 'Disease Detection' tool in the sidebar, "
+            "upload a photo of the affected plant leaf, and our AI will analyze "
+            "the symptoms and suggest organic or chemical treatments."
+        )
+    elif "fertilizer" in msg or "khad" in msg or "urea" in msg or "npk" in msg:
+        return (
+            "A balanced fertilizer schedule is key. You can use our 'Fertilizer Calc' "
+            "tool to enter your crop type and field size. It will give you the exact quantity "
+            "of Urea, DAP, and Potash required, along with an application timeline."
+        )
+    elif "weather" in msg or "mausam" in msg or "rain" in msg or "baarish" in msg:
+        return (
+            "To view weather information, check your Dashboard weather card! "
+            "If rain is predicted, postpone fertilizer spray to prevent it from washing off. "
+            "Keep soil drained if heavy rainfall is warning."
+        )
+    elif "mandi" in msg or "rate" in msg or "price" in msg or "daam" in msg:
+        return (
+            "You can track daily market prices via our Mandi Price Tracker in the sidebar. "
+            "Choose your commodity and state to view active prices and decide when to sell."
+        )
+    else:
+        return (
+            "Hello! I am your FarmOS assistant. I can help with crop suggestions, fertilizer "
+            "quantities, pest identifier, mandi prices, and government schemes. "
+            "Ask me things like 'What should I grow?' or 'How do I identify leaf blight?'."
+        )
+

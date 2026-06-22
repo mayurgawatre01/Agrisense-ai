@@ -1,62 +1,192 @@
 {% extends 'base.html' %}
-{% block title %}Welcome{% endblock %}
+{% block title %}Welcome to FarmOS{% endblock %}
 {% block content_auth %}
-<div class="hero">
-    <div class="hero-badge">
-        <i class="ti ti-leaf" style="font-size:0.85rem;"></i>
-        Smart Agriculture Platform
-    </div>
-    <h1>
-        Grow Smarter with<br>
-        <span class="highlight">AI-Powered</span> Insights
-    </h1>
-    <p class="hero-sub">
-        Predict crop yields, analyze historical trends, and make data-driven farming decisions — all in one platform.
-    </p>
-    <div class="hero-buttons">
-        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding:12px 32px; font-size:0.95rem;">
-            <i class="ti ti-login"></i> Login
-        </a>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-outline" style="padding:12px 32px; font-size:0.95rem;">
-            <i class="ti ti-user-plus"></i> Register Free
-        </a>
-    </div>
 
-    <div class="hero-features">
-        <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <div class="feature-title">Mandi Price Tracker</div>
-            <div class="feature-desc">Aaj ka mandi rate dekho — sahi time par sahi price mein fasal bechein.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🔬</div>
-            <div class="feature-title">Pest/Disease Identifier</div>
-            <div class="feature-desc">Photo upload karo, AI turant batayega kaunsi bimari hai aur ilaaj kya hai.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🏛️</div>
-            <div class="feature-title">Govt Scheme Finder</div>
-            <div class="feature-desc">State chuniye, sabhi sarkari yojanayein eligibility ke saath dekhiye.</div>
-        </div>
-    </div>
+<style>
+.landing-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 3rem;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(248, 250, 252, 0.75);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+.landing-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 1.3rem;
+    font-family: 'Outfit', sans-serif;
+}
+.landing-brand-logo {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+}
+.landing-nav-links {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+.landing-nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+    font-size: 0.92rem;
+}
+.landing-nav-links a:hover {
+    color: var(--primary);
+}
+.landing-hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 7rem 1.5rem 3rem;
+    position: relative;
+    overflow: hidden;
+    background: var(--background);
+}
+.gradient-orb-1 {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.12) 0%, transparent 70%);
+    top: -50px; left: -100px;
+    animation: moveOrb1 15s infinite alternate ease-in-out;
+    pointer-events: none;
+}
+.gradient-orb-2 {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%);
+    bottom: -150px; right: -100px;
+    animation: moveOrb2 20s infinite alternate ease-in-out;
+    pointer-events: none;
+}
+@keyframes moveOrb1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(120px, 60px) scale(1.1); }
+}
+@keyframes moveOrb2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-100px, -80px) scale(0.9); }
+}
+.glass-card {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+}
+.hero-content {
+    max-width: 800px;
+    z-index: 10;
+}
+@media (max-width: 768px) {
+    .landing-navbar { padding: 1rem 1.5rem; }
+    .landing-nav-links { display: none; }
+}
+</style>
 
-    <!-- Stats strip -->
-    <div style="display:flex; gap:2.5rem; margin-top:3rem; flex-wrap:wrap; justify-content:center;">
-        <div style="text-align:center;">
-            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">2.4L+</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">Training Records</div>
+<!-- Modern Navbar -->
+<header class="landing-navbar">
+    <a href="#" class="landing-brand">
+        <div class="landing-brand-logo">🌱</div>
+        <span>FarmOS</span>
+    </a>
+    <div class="landing-nav-links">
+        <a href="#features">Features</a>
+        <a href="#metrics">Analytics</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm" style="padding: 6px 16px;">Sign In</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm" style="padding: 6px 16px;">Get Started</a>
+    </div>
+</header>
+
+<!-- Landing Hero Section -->
+<div class="landing-hero">
+    <!-- Animated Gradient Background -->
+    <div class="gradient-orb-1"></div>
+    <div class="gradient-orb-2"></div>
+    
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i class="ti ti-sparkles" style="font-size:0.9rem;"></i>
+            Enterprise Smart Agriculture
         </div>
-        <div style="text-align:center;">
-            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">14</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">Crop Types</div>
+        <h1>
+            AI Powered<br>
+            <span class="highlight">Smart Farming</span> Platform
+        </h1>
+        <p class="hero-sub">
+            Maximize yield outputs, identify diseases, and plan fertilization using our predictive agronomy models. Complete real-time intelligence for digital farm management.
+        </p>
+        
+        <!-- CTA Buttons -->
+        <div class="hero-buttons">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="padding: 12px 36px; font-size: 1rem;">
+                Start Analysis <i class="ti ti-arrow-right"></i>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline" style="padding: 12px 36px; font-size: 1rem;">
+                View Dashboard <i class="ti ti-layout-dashboard"></i>
+            </a>
         </div>
-        <div style="text-align:center;">
-            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">15</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">Indian States</div>
+
+        <!-- Glassmorphism Cards Section -->
+        <div class="hero-features" id="features" style="margin-top: 5rem;">
+            <div class="feature-card glass-card">
+                <div class="feature-icon">📈</div>
+                <div class="feature-title">Predictive Yields</div>
+                <div class="feature-desc">Leverage advanced Random Forest models to accurately project season harvests before seeding.</div>
+            </div>
+            <div class="feature-card glass-card">
+                <div class="feature-icon">🔬</div>
+                <div class="feature-title">Disease Detection</div>
+                <div class="feature-desc">Upload a photo of crop foliage to instantly isolate leaf blight, stem borer, and deficiencies using Gemini AI.</div>
+            </div>
+            <div class="feature-card glass-card">
+                <div class="feature-icon">🧪</div>
+                <div class="feature-title">Fertilizer Calc</div>
+                <div class="feature-desc">Generate optimized NPK application schedules mapped directly to your exact field size in acres.</div>
+            </div>
         </div>
-        <div style="text-align:center;">
-            <div style="font-size:1.6rem; font-weight:800; color:var(--green-primary);">~88%</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">Model Accuracy</div>
+
+        <!-- Stats Section -->
+        <div id="metrics" style="display:flex; gap:3rem; margin-top:5rem; flex-wrap:wrap; justify-content:center; padding-bottom: 2rem;">
+            <div style="text-align:center;">
+                <div style="font-size:2rem; font-weight:800; color:var(--primary);">240K+</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); font-weight: 600;">Data Training Records</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:2rem; font-weight:800; color:var(--primary);">14</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); font-weight: 600;">Optimal Crop Profiles</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:2rem; font-weight:800; color:var(--primary);">15</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); font-weight: 600;">Agri-Climatic States</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:2rem; font-weight:800; color:var(--primary);">~88%</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); font-weight: 600;">Model Validation Accuracy</div>
+            </div>
         </div>
     </div>
 </div>

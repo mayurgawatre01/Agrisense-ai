@@ -1,7 +1,7 @@
 """
-CropSense v3.1 — Main Application
+FarmOS v4.0 — Main Application
 Upgrades: env config, admin blueprint, weather integration,
-          mandi price tracker, AI pest identifier, govt scheme finder
+          mandi price tracker, AI pest identifier, govt scheme finder, AI Chatbot
 """
 from flask import Flask, render_template
 from extensions import db, bcrypt
@@ -64,11 +64,11 @@ def create_app():
 
 def _create_admin():
     from models import User
-    if not User.query.filter_by(email='admin@cropsense.com').first():
+    if not User.query.filter_by(email='admin@farmos.com').first():
         hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
         admin = User(
             name='Admin',
-            email='admin@cropsense.com',
+            email='admin@farmos.com',
             password=hashed,
             role='admin',
             state='Maharashtra',
@@ -76,7 +76,7 @@ def _create_admin():
         )
         db.session.add(admin)
         db.session.commit()
-        print("✅ Admin created: admin@cropsense.com / admin123")
+        print("✅ Admin created: admin@farmos.com / admin123")
 
 
 if __name__ == "__main__":

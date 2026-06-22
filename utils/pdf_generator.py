@@ -10,7 +10,7 @@ class CropSensePDF(FPDF):
         self.set_font('Helvetica', 'B', 18)
         self.set_text_color(76, 175, 80)
         self.set_xy(10, 8)
-        self.cell(0, 10, 'CropSense Analytics Report', ln=True)
+        self.cell(0, 10, 'FarmOS Analytics Report', ln=True)
         self.set_font('Helvetica', '', 9)
         self.set_text_color(168, 213, 162)
         self.set_x(10)
@@ -21,7 +21,7 @@ class CropSensePDF(FPDF):
         self.set_y(-15)
         self.set_font('Helvetica', 'I', 8)
         self.set_text_color(100, 150, 100)
-        self.cell(0, 10, f'CropSense v2.0 | Page {self.page_no()}', align='C')
+        self.cell(0, 10, f'FarmOS v4.0 | Page {self.page_no()}', align='C')
 
     def section_title(self, title):
         self.set_fill_color(15, 33, 55)

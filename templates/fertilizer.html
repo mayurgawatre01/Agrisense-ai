@@ -5,170 +5,233 @@
 
 <div class="page-header">
     <div class="page-header-left">
-        <h1>🌱 <span data-i18n="fert.title">Fertilizer Calculator</span></h1>
-        <p data-i18n="fert.subtitle">ICAR recommendations — exact quantity for your field size</p>
+        <h1>🧪 Fertilizer Calculator</h1>
+        <p>ICAR agronomy guidelines - calculate precise chemical fertilization amounts and timelines.</p>
     </div>
 </div>
 
 <div class="grid-2">
     <!-- Input Form -->
-    <div class="card">
+    <div class="card" style="height: fit-content;">
         <div class="card-header">
-            <div class="card-title"><i class="ti ti-calculator card-title-icon"></i> <span data-i18n="fert.enter">Enter Details</span></div>
+            <div class="card-title"><i class="ti ti-calculator card-title-icon"></i> Calculate Dosage</div>
         </div>
-        <form method="POST" style="padding: 0 4px 8px;">
+        <form method="POST" style="padding: 0 4px;">
             <div class="form-group">
-                <label class="form-label" data-i18n="fert.select_crop">Select Crop</label>
-                <select name="crop" class="form-control" required>
-                    <option value="" data-i18n="fert.placeholder">-- Select Crop --</option>
+                <label>Select Target Crop</label>
+                <select name="crop" required>
+                    <option value="">-- Choose Crop --</option>
                     {% for c in crops %}
                     <option value="{{ c }}" {% if (result and result.crop == c) or (not result and prefill_crop == c) %}selected{% endif %}>{{ c }}</option>
                     {% endfor %}
                 </select>
             </div>
+            
             <div class="form-group">
-                <label class="form-label" data-i18n="fert.area_label">Your Field Size (in Acres)</label>
-                <input type="number" step="0.1" name="area" class="form-control"
-                       placeholder="e.g. 2.5"
-                       value="{{ result.area_acres if result else '' }}" min="0.1" max="1000" required>
-                <small style="color:var(--text-muted); font-size:0.78rem;">
-                    1 Acre = 0.40 Hectare | 1 Bigha ≈ 0.62 Acre (varies by state)
-                </small>
+                <label>Cultivated Area (Acres)</label>
+                <input type="number" step="0.1" name="area" placeholder="e.g. 2.5"
+                       value="{{ result.area_acres if result else '1.0' }}" min="0.1" max="1000" required>
+                <div class="form-hint">Dosages scale linearly based on acreage defaults.</div>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;">
-                <i class="ti ti-calculator"></i> <span data-i18n="fert.calc_btn">Calculate</span>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 10px;">
+                <i class="ti ti-activity-heartbeat"></i> Generate Plan
             </button>
         </form>
     </div>
 
-    <!-- Summary Card -->
+    <!-- Summary NPK Allocation Card -->
     {% if result %}
     <div class="card">
         <div class="card-header">
-            <div class="card-title"><i class="ti ti-file-text card-title-icon"></i> Summary — {{ result.crop }}</div>
+            <div class="card-title"><i class="ti ti-chart-pie card-title-icon"></i> Chemical Allocation — {{ result.crop }}</div>
         </div>
-        <div style="padding: 0 4px;">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-                <div style="background:var(--bg-tertiary); border-radius:10px; padding:12px; text-align:center;">
-                    <div style="font-size:1.4rem; font-weight:800; color:var(--green-primary);">{{ result.area_acres }}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted);">Acres</div>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:1.5rem;">
+            <div style="background: var(--background); border-radius: var(--radius-sm); padding: 10px 14px; border: 1px solid rgba(0,0,0,0.03);">
+                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:700; text-transform:uppercase;">Area (Acres)</span>
+                <div style="font-size:1.3rem; font-weight:800; color:var(--primary); margin-top:2px;">{{ result.area_acres }}</div>
+            </div>
+            <div style="background: var(--background); border-radius: var(--radius-sm); padding: 10px 14px; border: 1px solid rgba(0,0,0,0.03);">
+                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:700; text-transform:uppercase;">Area (Hectares)</span>
+                <div style="font-size:1.3rem; font-weight:800; color:var(--primary); margin-top:2px;">{{ result.area_ha }}</div>
+            </div>
+        </div>
+
+        <!-- NPK progress tracks -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="npk-bar-row">
+                <div class="npk-bar-label">
+                    <span class="npk-name">🟢 Nitrogen (N)</span>
+                    <span class="npk-value">{{ result.npk_total.N }} kg</span>
                 </div>
-                <div style="background:var(--bg-tertiary); border-radius:10px; padding:12px; text-align:center;">
-                    <div style="font-size:1.4rem; font-weight:800; color:var(--green-primary);">{{ result.area_ha }}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted);">Hectares</div>
+                <div class="npk-bar-track">
+                    <div class="npk-bar-fill n" style="width:{{ result.npk_pct.N }}%;"></div>
                 </div>
             </div>
-
-            <!-- NPK Total -->
-            <div style="margin-bottom:14px;">
-                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; font-weight:600; text-transform:uppercase;">Total NPK Required</div>
-
-                <div class="npk-bar-row">
-                    <div class="npk-bar-label">
-                        <span class="npk-name">🟢 Nitrogen (N)</span>
-                        <span class="npk-value" style="color:#4ade80;">{{ result.npk_total.N }} kg</span>
-                    </div>
-                    <div class="npk-bar-track"><div class="npk-bar-fill n" style="width:{{ result.npk_pct.N }}%;"></div></div>
+            
+            <div class="npk-bar-row">
+                <div class="npk-bar-label">
+                    <span class="npk-name">🟠 Phosphorus (P)</span>
+                    <span class="npk-value">{{ result.npk_total.P }} kg</span>
                 </div>
-
-                <div class="npk-bar-row">
-                    <div class="npk-bar-label">
-                        <span class="npk-name">🟠 Phosphorus (P)</span>
-                        <span class="npk-value" style="color:#fb923c;">{{ result.npk_total.P }} kg</span>
-                    </div>
-                    <div class="npk-bar-track"><div class="npk-bar-fill p" style="width:{{ result.npk_pct.P }}%;"></div></div>
-                </div>
-
-                <div class="npk-bar-row">
-                    <div class="npk-bar-label">
-                        <span class="npk-name">🔵 Potassium (K)</span>
-                        <span class="npk-value" style="color:#60a5fa;">{{ result.npk_total.K }} kg</span>
-                    </div>
-                    <div class="npk-bar-track"><div class="npk-bar-fill k" style="width:{{ result.npk_pct.K }}%;"></div></div>
+                <div class="npk-bar-track">
+                    <div class="npk-bar-fill p" style="width:{{ result.npk_pct.P }}%;"></div>
                 </div>
             </div>
+            
+            <div class="npk-bar-row">
+                <div class="npk-bar-label">
+                    <span class="npk-name">🔵 Potassium (K)</span>
+                    <span class="npk-value">{{ result.npk_total.K }} kg</span>
+                </div>
+                <div class="npk-bar-track">
+                    <div class="npk-bar-fill k" style="width:{{ result.npk_pct.K }}%;"></div>
+                </div>
+            </div>
+        </div>
 
-            <!-- Seed -->
-            <div style="background:var(--bg-tertiary); border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:0.78rem; color:var(--text-muted);">Seed Required</div>
-                    <div style="font-weight:700; color:var(--text-primary);">{{ result.seed_total }} kg</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:0.78rem; color:var(--text-muted);">Spacing</div>
-                    <div style="font-weight:600; color:var(--text-secondary); font-size:0.85rem;">{{ result.spacing }}</div>
-                </div>
+        <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; background:var(--background); border-radius: var(--radius-sm); padding:10px 14px; border: 1px solid rgba(0,0,0,0.02);">
+            <div>
+                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:600;">Optimal Spacing</span>
+                <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary); margin-top:2px;">{{ result.spacing }}</div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size:0.72rem; color:var(--text-secondary); font-weight:600;">Est. Seeds Required</span>
+                <div style="font-weight:700; font-size:0.9rem; color:var(--primary); margin-top:2px;">{{ result.seed_total }} kg</div>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="card">
-        <div class="empty-state">
-            <div class="empty-icon">🧪</div>
-            <p>Crop aur area enter karo — exact fertilizer quantity, bags count, aur timing mil jaayega.</p>
-        </div>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:3rem; margin-bottom: 0;">
+        <div style="font-size:3.5rem; margin-bottom:1rem;">🧪</div>
+        <p style="font-weight:700; color:var(--text-primary); font-size:1.05rem;">Dosage Planner Idle</p>
+        <p style="color:var(--text-secondary); font-size:0.85rem; margin-top:4px; max-width:280px;">Select a crop and input cultivated acreage to compute direct bag counts and NPK distributions.</p>
     </div>
     {% endif %}
 </div>
 
-<!-- Detailed Fertilizer Table -->
 {% if result %}
+<!-- Detailed Fertilizer Table -->
 <div class="card">
     <div class="card-header">
-        <div class="card-title"><i class="ti ti-table card-title-icon"></i> Fertilizer Plan — Kya, Kitna, Kab</div>
+        <div class="card-title"><i class="ti ti-list-details card-title-icon"></i> Optimized Allocation Breakdown</div>
         <div style="display:flex; gap:8px;">
             <form method="POST" action="{{ url_for('farmer.fertilizer_pdf') }}" style="display:inline;">
                 <input type="hidden" name="crop" value="{{ result.crop }}">
                 <input type="hidden" name="area" value="{{ result.area_acres }}">
-                <button type="submit" class="btn btn-ghost btn-sm"><i class="ti ti-file-download"></i> <span data-i18n="fert.download">Download Report PDF</span></button>
+                <button type="submit" class="btn btn-ghost btn-sm"><i class="ti ti-file-text"></i> PDF Report</button>
             </form>
-            <button onclick="window.print()" class="btn btn-ghost btn-sm"><i class="ti ti-printer"></i> <span data-i18n="fert.print">Print</span></button>
+            <button onclick="window.print()" class="btn btn-ghost btn-sm"><i class="ti ti-printer"></i> Print</button>
         </div>
     </div>
-    <div class="table-container">
+    <div class="table-container" style="margin-bottom: 1.5rem;">
         <table>
             <thead>
                 <tr>
-                    <th>Fertilizer</th>
-                    <th>Per Hectare</th>
-                    <th>Aapke Liye (Total)</th>
-                    <th>Bags (50kg)</th>
-                    <th>Kab Daalna Hai</th>
+                    <th>Fertilizer Name</th>
+                    <th>ICAR Dosage (per ha)</th>
+                    <th>Exact Weight</th>
+                    <th>Commercial 50kg Bags</th>
+                    <th>Estimated Cost</th>
                 </tr>
             </thead>
             <tbody>
             {% for f in result.fertilizers %}
-            <tr>
+            <tr class="fert-row-data" data-name="{{ f.name }}" data-weight="{{ f.total_kg }}">
                 <td><strong>{{ f.name }}</strong></td>
-                <td style="color:var(--text-muted);">{{ f.per_ha }} kg/ha</td>
-                <td style="min-width:140px;">
-                    <strong style="color:var(--green-primary); font-size:1.05rem;">{{ f.total_kg }} kg</strong>
+                <td style="color:var(--text-secondary);">{{ f.per_ha }} kg/ha</td>
+                <td>
+                    <span style="font-weight:700; color:var(--primary);">{{ f.total_kg }} kg</span>
                     <div class="fert-bar-track"><div class="fert-bar-fill" style="width:{{ f.bar_pct }}%;"></div></div>
                 </td>
-                <td>
-                    <span class="badge badge-green">~{{ f.bags_50kg }} bags</span>
-                </td>
-                <td style="color:var(--text-secondary); font-size:0.82rem;">{{ f.timing }}</td>
+                <td><span class="badge badge-green">~{{ f.bags_50kg }} Bags</span></td>
+                <td style="font-weight:700; color:var(--text-primary);" class="fert-cost-cell">₹—</td>
             </tr>
             {% endfor %}
+            <tr style="background: var(--background);">
+                <td colspan="4" style="text-align: right; font-weight: 700; color: var(--text-secondary);">Total Estimated Cost:</td>
+                <td style="font-weight: 800; color: var(--primary); font-size: 1.05rem;" id="total-fertilizer-cost">₹0</td>
+            </tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Tips -->
-<div class="card" style="border-left: 3px solid var(--green-primary);">
-    <div class="card-header">
-        <div class="card-title">💡 Expert Tip — {{ result.crop }}</div>
+<!-- Interactive Application Stepper -->
+<div class="card">
+    <div class="card-header" style="border-bottom: none; margin-bottom: 0.5rem;">
+        <div class="card-title"><i class="ti ti-timeline card-title-icon"></i> Application Stepper Timeline</div>
     </div>
-    <p style="color:var(--text-secondary); padding: 0 4px 8px; line-height:1.7;">
+    <div class="timeline-stepper">
+        {% for f in result.fertilizers %}
+        <div class="timeline-step">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;">
+                    <div class="timeline-title" style="color:var(--primary);">{{ f.name }} ({{ f.total_kg }} kg)</div>
+                    <span class="badge badge-blue" style="font-size:0.7rem; padding:1px 6px;">{{ f.bags_50kg }} bags</span>
+                </div>
+                <div class="timeline-desc" style="margin-top: 6px; font-weight:600; color:var(--text-primary);">
+                    🗓️ Application Window: {{ f.timing }}
+                </div>
+                <div class="timeline-desc" style="font-size:0.8rem; margin-top:2px;">
+                    Distribute evenly around root zones. Ensure soil moisture is adequate.
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Tips -->
+<div class="card" style="border-left: 4px solid var(--primary); background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240, 253, 244, 0.2) 100%);">
+    <div class="card-header" style="border-bottom: none; margin-bottom: 0.5rem; padding-bottom: 0;">
+        <div class="card-title"><i class="ti ti-bulb card-title-icon"></i> Agronomy Notice</div>
+    </div>
+    <p style="color:var(--text-secondary); padding: 0 4px 8px; line-height:1.6; font-size:0.9rem;">
         {{ result.tips }}
     </p>
-    <p style="color:var(--text-muted); font-size:0.75rem; padding: 0 4px 8px;">
-        📖 Source: ICAR (Indian Council of Agricultural Research) recommendations.
-        Local soil test ke baad quantities adjust karein.
-    </p>
+    <div style="font-size:0.75rem; color:var(--text-muted); padding: 0 4px;">
+        ℹ️ Reference standards provided by the Indian Council of Agricultural Research (ICAR). Dosages are estimates; adapt weights according to local lab reports.
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Estimate cost based on commercial chemical price mappings in India
+    const prices = {
+        'Urea': 6,             // Highly subsidized, ~276 per 45kg bag
+        'DAP': 27,             // Di-ammonium phosphate, ~1350 per 50kg bag
+        'MOP': 34,             // Muriate of potash, ~1700 per 50kg bag
+        'SSP': 11,             // Single super phosphate, ~550 per 50kg bag
+        'NPK Complex': 29,     // NPK 12:32:16 or similar, ~1450 per 50kg bag
+        'Ammonium Sulphate': 20
+    };
+
+    let totalCost = 0;
+    
+    document.querySelectorAll('.fert-row-data').forEach(row => {
+        const name = row.dataset.name;
+        const weight = parseFloat(row.dataset.weight) || 0;
+        
+        let pricePerKg = 20; // fallback default
+        for (const [key, val] of Object.entries(prices)) {
+            if (name.includes(key)) {
+                pricePerKg = val;
+                break;
+            }
+        }
+        
+        const cost = weight * pricePerKg;
+        totalCost += cost;
+        
+        row.querySelector('.fert-cost-cell').textContent = '₹' + Math.round(cost).toLocaleString('en-IN');
+    });
+    
+    document.getElementById('total-fertilizer-cost').textContent = '₹' + Math.round(totalCost).toLocaleString('en-IN');
+});
+</script>
 {% endif %}
 
 {% endblock %}

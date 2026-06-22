@@ -146,3 +146,80 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => el.remove(), 3400);
     });
 });
+
+
+// ===== AI FLOATING CHATBOT CLIENT =====
+function toggleChatbot() {
+    const drawer = document.getElementById('chatbot-drawer');
+    if (drawer) {
+        drawer.classList.toggle('open');
+        if (drawer.classList.contains('open')) {
+            const input = document.getElementById('chatbot-input');
+            if (input) input.focus();
+        }
+    }
+}
+
+function askPreset(text) {
+    const input = document.getElementById('chatbot-input');
+    if (input) {
+        input.value = text;
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatbot-input');
+    const msg = input ? input.value.trim() : '';
+    if (!msg) return;
+    
+    // Clear input
+    input.value = '';
+    
+    // Append user message
+    appendMessage(msg, 'user');
+    
+    // Show typing indicator
+    const typingId = appendMessage('Thinking...', 'bot typing');
+    
+    // Call backend
+    fetch('/tools/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+        // Remove typing message
+        removeMessage(typingId);
+        if (data.success) {
+            appendMessage(data.response, 'bot');
+        } else {
+            appendMessage('Sorry, I encountered an error: ' + (data.error || 'unknown'), 'bot');
+        }
+    })
+    .catch(err => {
+        removeMessage(typingId);
+        appendMessage('Could not connect to FarmOS assistant server.', 'bot');
+    });
+}
+
+function appendMessage(text, sender) {
+    const chatMsgs = document.getElementById('chatbot-messages');
+    if (!chatMsgs) return;
+    
+    const msgDiv = document.createElement('div');
+    const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+    msgDiv.id = msgId;
+    msgDiv.className = 'chatbot-msg ' + sender;
+    msgDiv.textContent = text;
+    chatMsgs.appendChild(msgDiv);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    return msgId;
+}
+
+function removeMessage(id) {
+    const msg = document.getElementById(id);
+    if (msg) msg.remove();
+}
+

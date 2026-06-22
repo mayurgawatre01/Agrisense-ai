@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CropSense{% endblock %} | Smart Agriculture Analytics</title>
+    <title>{% block title %}FarmOS{% endblock %} | Next-Gen AI Agriculture Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
     {% block extra_css %}{% endblock %}
@@ -14,56 +14,73 @@
 <div class="app-layout">
     <aside class="sidebar" id="sidebar">
         <a href="{{ url_for('farmer.dashboard') }}" class="sidebar-brand">
-            <div class="brand-icon-wrap">🌾</div>
-            <div><div class="brand-name">CropSense</div></div>
-            <span class="brand-version">v3.1</span>
+            <div class="brand-icon-wrap">🌱</div>
+            <div>
+                <div class="brand-name">FarmOS</div>
+            </div>
+            <span class="brand-version">v4.0</span>
         </a>
         <nav class="sidebar-nav">
-            <span class="nav-section-label" data-i18n="nav.farmer_tools">Farmer Tools</span>
+            <span class="nav-section-label" data-i18n="nav.farmer_tools">FARMING SUITE</span>
+            
             <a href="{{ url_for('farmer.dashboard') }}" class="{% if request.endpoint == 'farmer.dashboard' %}active{% endif %}">
                 <i class="ti ti-layout-dashboard nav-icon"></i> <span data-i18n="nav.dashboard">Dashboard</span>
             </a>
-            <a href="{{ url_for('farmer.upload') }}" class="{% if request.endpoint == 'farmer.upload' %}active{% endif %}">
-                <i class="ti ti-upload nav-icon"></i> <span data-i18n="nav.upload_data">Upload Data</span>
+            
+            <a href="{{ url_for('farmer.recommend') }}" class="{% if request.endpoint == 'farmer.recommend' %}active{% endif %}">
+                <i class="ti ti-seeding nav-icon"></i> <span data-i18n="nav.crop_recommender">Crop Recommender</span>
             </a>
+            
             <a href="{{ url_for('farmer.predict') }}" class="{% if request.endpoint == 'farmer.predict' %}active{% endif %}">
-                <i class="ti ti-brain nav-icon"></i> <span data-i18n="nav.predict_yield">Predict Yield</span>
+                <i class="ti ti-presentation-analytics nav-icon"></i> <span data-i18n="nav.predict_yield">Yield Prediction</span>
                 <span class="nav-badge">AI</span>
             </a>
-            <a href="{{ url_for('farmer.recommend') }}" class="{% if request.endpoint == 'farmer.recommend' %}active{% endif %}">
-                <i class="ti ti-leaf nav-icon"></i> <span data-i18n="nav.crop_recommender">Crop Recommender</span>
-            </a>
+            
             <a href="{{ url_for('farmer.fertilizer') }}" class="{% if request.endpoint == 'farmer.fertilizer' %}active{% endif %}">
                 <i class="ti ti-flask nav-icon"></i> <span data-i18n="nav.fertilizer_calc">Fertilizer Calc</span>
             </a>
-            <span class="nav-section-label" data-i18n="nav.kab_bechun">Kab Bechun? 🥇</span>
+
+            <span class="nav-section-label" data-i18n="nav.kab_bechun">INTELLIGENCE</span>
+            
             <a href="{{ url_for('tools.mandi_tracker') }}" class="{% if request.endpoint == 'tools.mandi_tracker' %}active{% endif %}">
-                <i class="ti ti-chart-line nav-icon"></i> <span data-i18n="nav.mandi_tracker">Mandi Price Tracker</span>
+                <i class="ti ti-coins nav-icon"></i> <span data-i18n="nav.mandi_tracker">Mandi Price Tracker</span>
             </a>
+            
             <a href="{{ url_for('tools.pest_identifier') }}" class="{% if request.endpoint == 'tools.pest_identifier' %}active{% endif %}">
-                <i class="ti ti-camera nav-icon"></i> <span data-i18n="nav.pest_identifier">Pest/Disease Identifier</span>
+                <i class="ti ti-bug nav-icon"></i> <span data-i18n="nav.pest_identifier">Disease Detection</span>
                 <span class="nav-badge">AI</span>
             </a>
+            
             <a href="{{ url_for('tools.scheme_finder') }}" class="{% if request.endpoint == 'tools.scheme_finder' %}active{% endif %}">
-                <i class="ti ti-building-bank nav-icon"></i> <span data-i18n="nav.scheme_finder">Govt Scheme Finder</span>
+                <i class="ti ti-building-bank nav-icon"></i> <span data-i18n="nav.scheme_finder">Govt Schemes</span>
             </a>
+
+            <span class="nav-section-label" data-i18n="nav.data_management">DATA & RECORDS</span>
+            
+            <a href="{{ url_for('farmer.upload') }}" class="{% if request.endpoint == 'farmer.upload' %}active{% endif %}">
+                <i class="ti ti-cloud-upload nav-icon"></i> <span data-i18n="nav.upload_data">Upload Logs</span>
+            </a>
+            
             <a href="{{ url_for('farmer.history') }}" class="{% if request.endpoint == 'farmer.history' %}active{% endif %}">
-                <i class="ti ti-clock-hour-4 nav-icon"></i> <span data-i18n="nav.history">History</span>
+                <i class="ti ti-history nav-icon"></i> <span data-i18n="nav.history">Logs History</span>
             </a>
-            <span class="nav-section-label" data-i18n="nav.reports">Reports</span>
+
+            <span class="nav-section-label" data-i18n="nav.reports">REPORTS</span>
             <a href="#" onclick="downloadPDFReport()">
-                <i class="ti ti-file-type-pdf nav-icon"></i> <span data-i18n="nav.pdf_report">PDF Report</span>
+                <i class="ti ti-file-text nav-icon"></i> <span data-i18n="nav.pdf_report">PDF Summary</span>
             </a>
             <a href="{{ url_for('farmer.export_csv') }}">
-                <i class="ti ti-table-export nav-icon"></i> <span data-i18n="nav.export_csv">Export CSV</span>
+                <i class="ti ti-download nav-icon"></i> <span data-i18n="nav.export_csv">Export CSV</span>
             </a>
+
             {% if session.get('role') == 'admin' %}
-            <span class="nav-section-label">Admin</span>
+            <span class="nav-section-label">SYSTEM</span>
             <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
-                <i class="ti ti-shield nav-icon"></i> Admin Panel
+                <i class="ti ti-shield-check nav-icon"></i> Control Panel
             </a>
             {% endif %}
         </nav>
+        
         <div class="sidebar-footer">
             <div class="user-info-sidebar">
                 <div class="user-avatar">{{ session.get('user_name','U')[0]|upper }}</div>
@@ -116,6 +133,42 @@
         <main class="main-content">
             {% block content %}{% endblock %}
         </main>
+    </div>
+</div>
+
+<!-- Floating AI Chatbot Assistant -->
+<div class="chatbot-float" id="chatbot-toggle" onclick="toggleChatbot()" title="Ask FarmOS AI">
+    <i class="ti ti-message-chatbot"></i>
+</div>
+
+<div class="chatbot-drawer" id="chatbot-drawer">
+    <div class="chatbot-header">
+        <div class="chatbot-header-info">
+            <div class="chatbot-logo-circle">🤖</div>
+            <div>
+                <div class="chatbot-title">FarmOS Assistant</div>
+                <div class="chatbot-status">Online</div>
+            </div>
+        </div>
+        <button class="chatbot-close" onclick="toggleChatbot()">
+            <i class="ti ti-x"></i>
+        </button>
+    </div>
+    <div class="chatbot-messages" id="chatbot-messages">
+        <div class="chatbot-msg bot">
+            Hello! I am your FarmOS Assistant. How can I help you grow today?
+        </div>
+    </div>
+    <div class="chatbot-suggested-queries">
+        <div class="chatbot-suggested-query" onclick="askPreset('What should I grow?')">🌾 What should I grow?</div>
+        <div class="chatbot-suggested-query" onclick="askPreset('Identify leaf disease')">🔬 Disease Identifier</div>
+        <div class="chatbot-suggested-query" onclick="askPreset('Best fertilizer for rice')">🧪 Fertilizer tips</div>
+    </div>
+    <div class="chatbot-input-area">
+        <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Ask a question..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+        <button class="chatbot-send-btn" onclick="sendChatMessage()">
+            <i class="ti ti-send"></i>
+        </button>
     </div>
 </div>
 
